@@ -11,8 +11,8 @@ from bs4 import BeautifulSoup
 
 # Constantes
 SITE_URL = 'https://www.kabum.com.br/'
-TERMO_PESQUISA = 'Processador'
-NUM_PAGS = 5
+TERMO_PESQUISA = 'Memoria Ram'
+NUM_PAGS = 2
 NOME_ARQUIVO = "{}_{}.csv".format(TERMO_PESQUISA, datetime.datetime.now().strftime("%d%m%Y%H%M"))
 
 def extrair_infos_produto(produto):
@@ -26,7 +26,8 @@ def extrair_infos_produto(produto):
 # Inicializando o webdriver
 browser_options = Options()
 browser_options.add_argument('--headless')
-driver = webdriver.Firefox(options=browser_options)
+# driver = webdriver.Chrome(options=browser_options)
+driver = webdriver.Chrome()
 driver.get(SITE_URL)
 
 # Buscar
@@ -44,7 +45,7 @@ qtde_avaliacoes = []
 p = 1
 while p <= NUM_PAGS:
     try:
-        print(f"Lendo página {p}...")
+        print(f"[Info] Reading page {p}...")
 
         wait = WebDriverWait(driver, 10)
 
@@ -57,7 +58,7 @@ while p <= NUM_PAGS:
 
         html = html.get_attribute("innerHTML")
 
-        sopa = BeautifulSoup(html, 'html5lib')
+        sopa = BeautifulSoup(html, 'html.parser')
         
         for item in sopa.find_all('div', {'class': 'productCard'}):
             titulo, preco_a_vista, avaliacao, qtde_avaliacao = extrair_infos_produto(item)
