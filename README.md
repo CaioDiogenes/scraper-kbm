@@ -5,7 +5,7 @@ Este web scraper tem como objetivo extrair informações de preço e descriçõe
 ## Instalação de requisitos
 
 Para instalar os requisitos sem precisar coloca-los manualmente rode o seguinte script:
-pip3 install -r requirements.
+pip3 install -r requirements
 
 ## Atributos extraídos
 
@@ -15,3 +15,4 @@ Os atributos de cada produto foram deliberadamente selecionados:
 - Preço
 - Avaliação (estrelas)
 - Quantidade de avaliações recebidas
+- Link do protudo
