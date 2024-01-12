@@ -1,5 +1,3 @@
-import time
-import datetime
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -22,7 +20,7 @@ def ExportCsv():
     df.to_csv(FILENAME, index=False)
     print(f"[Info] Arquivo salvo como {FILENAME}.")
 
-def extrair_infos_produto(produto):
+def ExtrairInfos(produto):
     wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'priceCard')))
 
     titulo = produto.find('span', class_='nameCard').text
@@ -33,8 +31,8 @@ def extrair_infos_produto(produto):
     return titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto
 
 SITE = 'https://www.kabum.com.br'
-PRODUTO = 'Memoria Ram'
-PAGINAS = 2
+PRODUTO = '' #produto desejado
+PAGINAS = 0 #valor desejado
 FILENAME = "{}.csv".format(PRODUTO)
 
 titulos = []
@@ -47,8 +45,11 @@ print(f"[Info] Starting")
 
 browser_options = Options()
 browser_options.add_argument('--headless')
+
+# caso nao queira ver o chrome ou o seu browser abrindo na sua frente descomente a linha com o options ( 50 ), e comente a linha abaixo ( 51 )
 # driver = webdriver.Chrome(options=browser_options)
 driver = webdriver.Chrome()
+
 driver.get(SITE)
 campo_busca = driver.find_element(By.ID, value='input-busca')
 campo_busca.send_keys(PRODUTO)
@@ -72,7 +73,7 @@ while p <= PAGINAS:
         sopa = BeautifulSoup(html, 'html.parser')
         
         for item in sopa.find_all('div', {'class': 'productCard'}):
-            titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto = extrair_infos_produto(item)
+            titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto = ExtrairInfos(item)
         
             titulos.append(titulo)
             precos_a_vista.append(preco_a_vista)
