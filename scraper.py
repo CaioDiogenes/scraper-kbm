@@ -9,15 +9,22 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 
-SITE_URL = 'https://www.kabum.com.br'
-TERMO_PESQUISA = 'SSD'
-NUM_PAGS = 1
-NOME_ARQUIVO = "{}_{}.csv".format(TERMO_PESQUISA, datetime.datetime.now().strftime("%d%m%Y%H%M"))
+def ExportCsv():
+    df = pd.DataFrame()
+    df["Link Produto"] = link
+    df["Nome"] = titulos
+    df["Preco_a_vista"] = precos_a_vista
+    df["Avaliacao"] = avaliacoes
+    df["Qtde_Avaliacoes"] = qtde_avaliacoes
 
-print(f"[Info] Starting")
+    print(f"\n[Done] {len(df)} registros adicionados.")
+
+    df.to_csv(FILENAME, index=False)
+    print(f"[Info] Arquivo salvo como {FILENAME}.")
 
 def extrair_infos_produto(produto):
     wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'priceCard')))
+
     titulo = produto.find('span', class_='nameCard').text
     preco_a_vista = float(produto.find('span', class_='priceCard').text.split('R$')[1].replace('.', '').replace(',', '.'))
     avaliacao = len(produto.find_all('div', class_='estrelaAvaliacao'))
@@ -25,15 +32,10 @@ def extrair_infos_produto(produto):
     link_produto = produto.find('a', class_='productLink').get('href')
     return titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto
 
-browser_options = Options()
-browser_options.add_argument('--headless')
-# driver = webdriver.Chrome(options=browser_options)
-driver = webdriver.Chrome()
-driver.get(SITE_URL)
-
-campo_busca = driver.find_element(By.ID, value='input-busca')
-campo_busca.send_keys(TERMO_PESQUISA)
-campo_busca.send_keys(Keys.ENTER)
+SITE = 'https://www.kabum.com.br'
+PRODUTO = 'Memoria Ram'
+PAGINAS = 2
+FILENAME = "{}.csv".format(PRODUTO)
 
 titulos = []
 precos_a_vista = []
@@ -41,8 +43,19 @@ avaliacoes = []
 qtde_avaliacoes = []
 link = []
 
+print(f"[Info] Starting")
+
+browser_options = Options()
+browser_options.add_argument('--headless')
+# driver = webdriver.Chrome(options=browser_options)
+driver = webdriver.Chrome()
+driver.get(SITE)
+campo_busca = driver.find_element(By.ID, value='input-busca')
+campo_busca.send_keys(PRODUTO)
+campo_busca.send_keys(Keys.ENTER)
+
 p = 1
-while p <= NUM_PAGS:
+while p <= PAGINAS:
     try:
         print(f"[Info] Reading page {p}...")
 
@@ -65,13 +78,13 @@ while p <= NUM_PAGS:
             precos_a_vista.append(preco_a_vista)
             avaliacoes.append(avaliacao)
             qtde_avaliacoes.append(qtde_avaliacao)
-            link.append( f'{SITE_URL}{link_produto}')
+            link.append( f'{SITE}{link_produto}')
             
         wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'nextLink'))).click()
         
         p += 1
 
-        if p > NUM_PAGS:
+        if p > PAGINAS:
             print("[Info] Extração concluída.")
             break
     except Exception as e:
@@ -80,14 +93,4 @@ while p <= NUM_PAGS:
 
 driver.close()
 
-df = pd.DataFrame()
-df["Link Produto"] = link
-df["Nome"] = titulos
-df["Preco_a_vista"] = precos_a_vista
-df["Avaliacao"] = avaliacoes
-df["Qtde_Avaliacoes"] = qtde_avaliacoes
-
-print(f"\n[Done] {len(df)} registros adicionados.")
-
-df.to_csv(NOME_ARQUIVO, index=False)
-print(f"[Info] Arquivo salvo como {NOME_ARQUIVO}.")
+ExportCsv()
