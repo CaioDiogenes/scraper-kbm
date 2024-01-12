@@ -9,11 +9,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 
-# Constantes
-SITE_URL = 'https://www.kabum.com.br/'
-TERMO_PESQUISA = 'Memoria Ram'
-NUM_PAGS = 2
+SITE_URL = 'https://www.kabum.com.br'
+TERMO_PESQUISA = 'SSD'
+NUM_PAGS = 1
 NOME_ARQUIVO = "{}_{}.csv".format(TERMO_PESQUISA, datetime.datetime.now().strftime("%d%m%Y%H%M"))
+
+print(f"[Info] Starting")
 
 def extrair_infos_produto(produto):
     wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'priceCard')))
@@ -21,27 +22,25 @@ def extrair_infos_produto(produto):
     preco_a_vista = float(produto.find('span', class_='priceCard').text.split('R$')[1].replace('.', '').replace(',', '.'))
     avaliacao = len(produto.find_all('div', class_='estrelaAvaliacao'))
     qtde_avaliacao = int(produto.find('div', class_='labelTotalAvaliacoes').text[1:-1]) if produto.find('div', class_='labelTotalAvaliacoes') else 0
-    return titulo, preco_a_vista, avaliacao, qtde_avaliacao
+    link_produto = produto.find('a', class_='productLink').get('href')
+    return titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto
 
-# Inicializando o webdriver
 browser_options = Options()
 browser_options.add_argument('--headless')
 # driver = webdriver.Chrome(options=browser_options)
 driver = webdriver.Chrome()
 driver.get(SITE_URL)
 
-# Buscar
 campo_busca = driver.find_element(By.ID, value='input-busca')
 campo_busca.send_keys(TERMO_PESQUISA)
 campo_busca.send_keys(Keys.ENTER)
 
-# Listas para armazenar os dados
 titulos = []
 precos_a_vista = []
 avaliacoes = []
 qtde_avaliacoes = []
+link = []
 
-# Inicia o loop de cada página
 p = 1
 while p <= NUM_PAGS:
     try:
@@ -49,7 +48,6 @@ while p <= NUM_PAGS:
 
         wait = WebDriverWait(driver, 10)
 
-        # Inicia a extração das informações
         try:
             html = driver.find_elements(By.TAG_NAME, 'main')[0]
         except IndexError as ie:
@@ -61,36 +59,35 @@ while p <= NUM_PAGS:
         sopa = BeautifulSoup(html, 'html.parser')
         
         for item in sopa.find_all('div', {'class': 'productCard'}):
-            titulo, preco_a_vista, avaliacao, qtde_avaliacao = extrair_infos_produto(item)
+            titulo, preco_a_vista, avaliacao, qtde_avaliacao, link_produto = extrair_infos_produto(item)
         
             titulos.append(titulo)
             precos_a_vista.append(preco_a_vista)
             avaliacoes.append(avaliacao)
             qtde_avaliacoes.append(qtde_avaliacao)
+            link.append( f'{SITE_URL}{link_produto}')
             
         wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'nextLink'))).click()
         
         p += 1
 
         if p > NUM_PAGS:
-            print("Extração concluída.")
+            print("[Info] Extração concluída.")
             break
     except Exception as e:
-        print("Exceção:", e)
+        print("[Error] Exceção:", e)
         break
 
-# Fechando o webdriver
 driver.close()
 
-# Criando o DataFrame com as listas
 df = pd.DataFrame()
+df["Link Produto"] = link
 df["Nome"] = titulos
 df["Preco_a_vista"] = precos_a_vista
 df["Avaliacao"] = avaliacoes
 df["Qtde_Avaliacoes"] = qtde_avaliacoes
 
-print(f"\n{len(df)} registros adicionados.")
+print(f"\n[Done] {len(df)} registros adicionados.")
 
-# Exportando para CSV
 df.to_csv(NOME_ARQUIVO, index=False)
-print(f"Arquivo salvo como {NOME_ARQUIVO}.")
+print(f"[Info] Arquivo salvo como {NOME_ARQUIVO}.")
